@@ -65,7 +65,6 @@ export default function App() {
   const [fcfGrowthRate, setFcfGrowthRate] = useState(11.0); // FCF Growth
   const [salesGrowthRate, setSalesGrowthRate] = useState(10.0); // Sales Growth
   const [netIncomeGrowthRate, setNetIncomeGrowthRate] = useState(11.5); // Net Income Growth
-  const [perpetualGrowth, setPerpetualGrowth] = useState(2.5); // Terminal Growth
 
   // Historical Multiples Means
   const [meanPE, setMeanPE] = useState(28.0);
@@ -90,8 +89,7 @@ export default function App() {
       meanPE: 28.0,
       meanPB: 36.0,
       meanPS: 7.2,
-      wacc: 9.0,
-      perpetualGrowth: 2.5
+      wacc: 9.0
     },
     MSFT: {
       name: 'Microsoft Corporation',
@@ -109,8 +107,7 @@ export default function App() {
       meanPE: 33.0,
       meanPB: 11.5,
       meanPS: 12.0,
-      wacc: 8.5,
-      perpetualGrowth: 2.5
+      wacc: 8.5
     },
     NVDA: {
       name: 'NVIDIA Corporation',
@@ -128,8 +125,7 @@ export default function App() {
       meanPE: 45.0,
       meanPB: 32.0,
       meanPS: 22.0,
-      wacc: 10.0,
-      perpetualGrowth: 3.0
+      wacc: 10.0
     },
     GOOGL: {
       name: 'Alphabet Inc.',
@@ -147,8 +143,7 @@ export default function App() {
       meanPE: 24.0,
       meanPB: 6.5,
       meanPS: 6.2,
-      wacc: 9.0,
-      perpetualGrowth: 2.5
+      wacc: 9.0
     },
     AMZN: {
       name: 'Amazon.com, Inc.',
@@ -166,8 +161,7 @@ export default function App() {
       meanPE: 40.0,
       meanPB: 8.2,
       meanPS: 3.1,
-      wacc: 9.5,
-      perpetualGrowth: 2.5
+      wacc: 9.5
     },
     TSLA: {
       name: 'Tesla, Inc.',
@@ -185,8 +179,7 @@ export default function App() {
       meanPE: 55.0,
       meanPB: 10.5,
       meanPS: 7.2,
-      wacc: 11.0,
-      perpetualGrowth: 2.5
+      wacc: 11.0
     },
     KO: {
       name: 'The Coca-Cola Company',
@@ -204,8 +197,7 @@ export default function App() {
       meanPE: 24.5,
       meanPB: 10.2,
       meanPS: 5.8,
-      wacc: 7.5,
-      perpetualGrowth: 2.0
+      wacc: 7.5
     },
     PETR4: {
       name: 'Petróleo Brasileiro S.A. - Petrobras',
@@ -223,8 +215,7 @@ export default function App() {
       meanPE: 6.2,
       meanPB: 1.3,
       meanPS: 1.0,
-      wacc: 12.5,
-      perpetualGrowth: 2.0
+      wacc: 12.5
     },
     VALE3: {
       name: 'Vale S.A.',
@@ -242,8 +233,7 @@ export default function App() {
       meanPE: 7.5,
       meanPB: 1.5,
       meanPS: 1.4,
-      wacc: 11.8,
-      perpetualGrowth: 2.0
+      wacc: 11.8
     },
     ITUB4: {
       name: 'Itaú Unibanco Holding S.A.',
@@ -261,8 +251,7 @@ export default function App() {
       meanPE: 10.5,
       meanPB: 1.9,
       meanPS: 2.1,
-      wacc: 11.5,
-      perpetualGrowth: 2.5
+      wacc: 11.5
     },
     WEGE3: {
       name: 'WEG S.A.',
@@ -280,8 +269,7 @@ export default function App() {
       meanPE: 35.0,
       meanPB: 10.8,
       meanPS: 5.8,
-      wacc: 10.5,
-      perpetualGrowth: 3.0
+      wacc: 10.5
     }
   }), []);
 
@@ -300,14 +288,12 @@ export default function App() {
     const yahooSymbol = isB3 ? `${cleanTicker}.SA` : cleanTicker;
 
     try {
-      // 1. Tentativa de busca real via API (Brapi para B3 ou Yahoo Finance)
       let livePrice = null;
       let liveName = null;
       let liveEps = null;
       let liveCurrency = isB3 ? 'R$' : '$';
 
       if (isB3) {
-        // Brapi public endpoint (funciona direto no browser e no Windows)
         const res = await fetch(`https://brapi.dev/api/quote/${cleanTicker}?fundamental=true`);
         if (res.ok) {
           const data = await res.json();
@@ -319,7 +305,6 @@ export default function App() {
           }
         }
       } else {
-        // Yahoo Finance endpoint (funciona nativamente no Windows/Tauri/Electron sem CORS)
         const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}`);
         if (res.ok) {
           const data = await res.json();
@@ -354,7 +339,6 @@ export default function App() {
           setMeanPB(cached.meanPB);
           setMeanPS(cached.meanPS);
           setWacc(cached.wacc);
-          setPerpetualGrowth(cached.perpetualGrowth);
         } else {
           const estimatedEps = liveEps || Number((livePrice * 0.06).toFixed(2));
           setEpsNoNRI(Number(estimatedEps.toFixed(2)));
@@ -370,7 +354,6 @@ export default function App() {
           setMeanPB(3.0);
           setMeanPS(2.2);
           setWacc(isB3 ? 11.5 : 9.0);
-          setPerpetualGrowth(2.5);
         }
 
         setSearchNotice({
@@ -381,10 +364,9 @@ export default function App() {
         return;
       }
     } catch (err) {
-      // Falha silenciosa (ex: bloqueio CORS no navegador) -> passa para o banco local
+      // Ignorar e avançar para fallback local
     }
 
-    // 2. Fallback para Base Local ou Estimativa Automática
     const found = tickerDatabase[cleanTicker];
 
     if (found) {
@@ -405,10 +387,9 @@ export default function App() {
       setMeanPB(found.meanPB);
       setMeanPS(found.meanPS);
       setWacc(found.wacc);
-      setPerpetualGrowth(found.perpetualGrowth);
       setSearchNotice({
         type: 'success',
-        text: `Dados base carregados para ${cleanTicker} (${found.name}). Na versão Windows (.exe), a cotação atualiza ao vivo.`
+        text: `Dados base carregados para ${cleanTicker} (${found.name}).`
       });
     } else {
       const generatedCurrency = isB3 ? 'R$' : '$';
@@ -431,72 +412,50 @@ export default function App() {
       setMeanPB(3.0);
       setMeanPS(2.2);
       setWacc(isB3 ? 11.5 : 9.0);
-      setPerpetualGrowth(2.5);
       setSearchNotice({
         type: 'warning',
-        text: `Ticker ${cleanTicker} não encontrado na API web (CORS). Estimativas padrão geradas — funciona ao vivo no Windows.`
+        text: `Ticker ${cleanTicker} gerado com estimativas padrão.`
       });
     }
 
     setIsSearching(false);
   };
 
-  // Helper function for discounting cash flows over N years
   const calculateDiscountedStream = (initialValue, growthRate, discountRate, years) => {
     let sumPV = 0;
     let currentValue = initialValue;
     const r = discountRate / 100;
     const g = growthRate / 100;
-    const yearlyDetails = [];
 
     for (let i = 1; i <= years; i++) {
       currentValue = currentValue * (1 + g);
       const pv = currentValue / Math.pow(1 + r, i);
       sumPV += pv;
-      yearlyDetails.push({ year: i, projected: currentValue, pv });
     }
 
-    return { totalPV: sumPV, yearlyDetails };
+    return sumPV;
   };
 
-  // --- COMPUTE THE 10 VALUATION MODELS ---
   const models = useMemo(() => {
-    const discount = wacc / 100;
-
-    // 1. PEG Ratio Without NRI Valuation
     const pegValuation = epsNoNRI * Math.max(0, epsGrowthRate);
-
-    // 2. Mean Price to Book Ratio (P/B Historical Mean)
     const meanPBValuation = bookValuePerShare * meanPB;
-
-    // 3. Mean Price to Earnings Ratio without NRI (P/E Historical Mean)
     const meanPEValuation = epsNoNRI * meanPE;
-
-    // 4. Price to Sales Growth Ratio (PSG Ratio)
     const psgValuation = salesPerShare * Math.max(0, salesGrowthRate);
-
-    // 5. Mean Price to Sales Ratio (P/S Historical Mean)
     const meanPSValuation = salesPerShare * meanPS;
 
-    // 6. DFCF Terminal 20 Anos (sem perpetuidade)
-    const dfcf20TerminalStream = calculateDiscountedStream(fcfPerShare, fcfGrowthRate, wacc, 20);
-    const dfcfTerminalValuation = dfcf20TerminalStream.totalPV;
+    // DFCF 20 Anos (sem perpetuidade)
+    const dfcf20Valuation = calculateDiscountedStream(fcfPerShare, fcfGrowthRate, wacc, 20);
+    const dfcfTerminalValuation = dfcf20Valuation; // 20 Anos puro
 
-    // 7. DFCF 20 Anos (sem valor terminal)
-    const dfcf20 = calculateDiscountedStream(fcfPerShare, fcfGrowthRate, wacc, 20);
-    const dfcf20Valuation = dfcf20.totalPV;
-
-    // 8. DCF 20 Yrs (Standard DCF 20 Yrs on Earnings/FCF Hybrid)
+    // DCF 20 Yrs Híbrido
     const hybridBase = (epsNoNRI + fcfPerShare) / 2;
     const hybridGrowth = (epsGrowthRate + fcfGrowthRate) / 2;
-    const dcf20 = calculateDiscountedStream(hybridBase, hybridGrowth, wacc, 20);
-    const dcf20Valuation = dcf20.totalPV;
+    const dcf20Valuation = calculateDiscountedStream(hybridBase, hybridGrowth, wacc, 20);
 
-    // 9. Discounted Net Income 20 Yrs
-    const dni20 = calculateDiscountedStream(netIncomePerShare, netIncomeGrowthRate, wacc, 20);
-    const dni20Valuation = dni20.totalPV;
+    // Discounted Net Income 20 Yrs
+    const dni20Valuation = calculateDiscountedStream(netIncomePerShare, netIncomeGrowthRate, wacc, 20);
 
-    // 10. Formula de Graham
+    // Fórmula de Graham
     const grahamValuation = (epsNoNRI * (8.5 + 2 * epsGrowthRate) * 4.4) / (aaaYield || 1);
 
     const list = [
@@ -630,7 +589,6 @@ export default function App() {
     fcfPerShare,
     fcfGrowthRate,
     wacc,
-    perpetualGrowth,
     netIncomePerShare,
     netIncomeGrowthRate,
     aaaYield,
@@ -639,12 +597,9 @@ export default function App() {
     currency
   ]);
 
-  // Overall Statistics Across All 10 Models
   const overallStats = useMemo(() => {
     const values = models.map((m) => m.intrinsicValue).filter((v) => !isNaN(v) && v > 0);
     const avgIntrinsic = values.reduce((a, b) => a + b, 0) / (values.length || 1);
-    const maxIntrinsic = Math.max(...values, 0);
-    const minIntrinsic = Math.min(...values, 0);
     const avgAcceptable = avgIntrinsic * (1 - marginOfSafety / 100);
     const avgMarginVsMarket = ((avgIntrinsic - marketPrice) / marketPrice) * 100;
 
@@ -654,8 +609,6 @@ export default function App() {
 
     return {
       avgIntrinsic,
-      maxIntrinsic,
-      minIntrinsic,
       avgAcceptable,
       avgMarginVsMarket,
       undervaluedCount,
@@ -664,12 +617,10 @@ export default function App() {
     };
   }, [models, marketPrice, marginOfSafety]);
 
-  // Selected single model details
   const currentModelObj = useMemo(() => {
     return models.find((m) => m.key === selectedModelKey) || models[0];
   }, [models, selectedModelKey]);
 
-  // Chart Data formatters
   const chartDataBar = useMemo(() => {
     return models.map((m) => ({
       name: m.shortName,
@@ -688,7 +639,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-white">
-      {/* Top Bar Header with Ticker Search */}
       <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
@@ -708,7 +658,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Ticker Search Form */}
           <form onSubmit={handleTickerSearch} className="flex items-center gap-2 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -728,15 +677,10 @@ export default function App() {
               disabled={isSearching}
               className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-cyan-500/20 transition-all disabled:opacity-50"
             >
-              {isSearching ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Search className="w-3.5 h-3.5" />
-              )}
+              {isSearching ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
               <span>Buscar</span>
             </button>
 
-            {/* Currency Switcher */}
             <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
               {['$', '€', 'R$'].map((curr) => (
                 <button
@@ -755,7 +699,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* Search notification alert */}
       {searchNotice && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
           <div className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
@@ -767,20 +710,13 @@ export default function App() {
               {searchNotice.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
               <span>{searchNotice.text}</span>
             </div>
-            <button onClick={() => setSearchNotice(null)} className="text-slate-400 hover:text-white text-xs font-bold px-2">
-              ×
-            </button>
+            <button onClick={() => setSearchNotice(null)} className="text-slate-400 hover:text-white text-xs font-bold px-2">×</button>
           </div>
         </div>
       )}
 
-      {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        
-        {/* Global Market Price & Presets Panel */}
         <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center relative z-10">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
@@ -795,14 +731,14 @@ export default function App() {
                   step="0.1"
                   value={marketPrice}
                   onChange={(e) => setMarketPrice(Math.max(0, parseFloat(e.target.value) || 0))}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 rounded-xl pl-9 pr-4 py-3 text-2xl font-bold text-cyan-400 tracking-tight transition-all"
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-xl pl-9 pr-4 py-3 text-2xl font-bold text-cyan-400"
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                Margem de Segurança Solicitada (%)
+                Margem de Segurança (%)
               </label>
               <div className="flex items-center space-x-3 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3">
                 <input
@@ -818,10 +754,9 @@ export default function App() {
               </div>
             </div>
 
-            {/* Quick Ticker Chips */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                Atalhos Rápidos de Ações
+                Atalhos Rápidos
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {['AAPL', 'MSFT', 'NVDA', 'PETR4', 'VALE3', 'ITUB4', 'WEGE3', 'KO'].map((tkr) => (
@@ -829,13 +764,13 @@ export default function App() {
                     key={tkr}
                     type="button"
                     onClick={() => handleTickerSearch(null, tkr)}
-                    className={`text-xs px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 ${
+                    className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${
                       activeTicker === tkr 
                         ? 'bg-cyan-500 text-white border-cyan-400 font-bold' 
                         : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
                     }`}
                   >
-                    <span>{tkr}</span>
+                    {tkr}
                   </button>
                 ))}
               </div>
@@ -843,269 +778,139 @@ export default function App() {
           </div>
         </div>
 
-        {/* Financial Inputs Dashboard Collapsible/Grid */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <h2 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-cyan-400" /> Parâmetros Financeiros de Entrada ({activeTicker})
+              <Sliders className="w-4 h-4 text-cyan-400" /> Parâmetros Financeiros ({activeTicker})
             </h2>
-            <span className="text-xs text-slate-500">Métricas auto-carregadas ou ajustáveis manualmente</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Metric Inputs Column 1 */}
-            <div className="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800/80">
+            <div className="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
               <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">Métricas por Ação</span>
               <div>
                 <label className="text-[11px] text-slate-400 block">LPA sem NRI ({currency})</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={epsNoNRI}
-                  onChange={(e) => setEpsNoNRI(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <input type="number" step="0.1" value={epsNoNRI} onChange={(e) => setEpsNoNRI(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
               <div>
                 <label className="text-[11px] text-slate-400 block">Valor Contábil / Ação ({currency})</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={bookValuePerShare}
-                  onChange={(e) => setBookValuePerShare(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <input type="number" step="0.1" value={bookValuePerShare} onChange={(e) => setBookValuePerShare(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
               <div>
                 <label className="text-[11px] text-slate-400 block">Vendas / Ação ({currency})</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={salesPerShare}
-                  onChange={(e) => setSalesPerShare(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <input type="number" step="0.1" value={salesPerShare} onChange={(e) => setSalesPerShare(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
             </div>
 
-            {/* Metric Inputs Column 2 */}
-            <div className="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800/80">
+            <div className="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
               <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">Fluxo de Caixa & Lucro</span>
               <div>
                 <label className="text-[11px] text-slate-400 block">FCF por Ação ({currency})</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={fcfPerShare}
-                  onChange={(e) => setFcfPerShare(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <input type="number" step="0.1" value={fcfPerShare} onChange={(e) => setFcfPerShare(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
               <div>
-                <label className="text-[11px] text-slate-400 block">Lucro Líquido por Ação ({currency})</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={netIncomePerShare}
-                  onChange={(e) => setNetIncomePerShare(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <label className="text-[11px] text-slate-400 block">Lucro Líquido / Ação ({currency})</label>
+                <input type="number" step="0.1" value={netIncomePerShare} onChange={(e) => setNetIncomePerShare(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
               <div>
                 <label className="text-[11px] text-slate-400 block">Yield Obrigações AAA (%)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={aaaYield}
-                  onChange={(e) => setAaaYield(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <input type="number" step="0.1" value={aaaYield} onChange={(e) => setAaaYield(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
             </div>
 
-            {/* Metric Inputs Column 3 */}
-            <div className="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800/80">
-              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">Taxas de Crescimento (%)</span>
+            <div className="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">Crescimento (%)</span>
               <div>
-                <label className="text-[11px] text-slate-400 block">Crescimento do Lucro / EPS (%)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={epsGrowthRate}
-                  onChange={(e) => setEpsGrowthRate(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <label className="text-[11px] text-slate-400 block">Crescimento do Lucro (%)</label>
+                <input type="number" step="0.5" value={epsGrowthRate} onChange={(e) => setEpsGrowthRate(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
               <div>
                 <label className="text-[11px] text-slate-400 block">Crescimento do FCF (%)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={fcfGrowthRate}
-                  onChange={(e) => setFcfGrowthRate(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <input type="number" step="0.5" value={fcfGrowthRate} onChange={(e) => setFcfGrowthRate(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
               <div>
                 <label className="text-[11px] text-slate-400 block">Crescimento das Vendas (%)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={salesGrowthRate}
-                  onChange={(e) => setSalesGrowthRate(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <input type="number" step="0.5" value={salesGrowthRate} onChange={(e) => setSalesGrowthRate(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
             </div>
 
-            {/* Metric Inputs Column 4 */}
-            <div className="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800/80">
-              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">Múltiplos Históricos & WACC</span>
+            <div className="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">Múltiplos & WACC</span>
               <div>
-                <label className="text-[11px] text-slate-400 block">P/L Médio (P/E Mean)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={meanPE}
-                  onChange={(e) => setMeanPE(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <label className="text-[11px] text-slate-400 block">P/L Médio</label>
+                <input type="number" step="0.5" value={meanPE} onChange={(e) => setMeanPE(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
               <div>
-                <label className="text-[11px] text-slate-400 block">P/B Médio (P/B Mean)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={meanPB}
-                  onChange={(e) => setMeanPB(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <label className="text-[11px] text-slate-400 block">P/B Médio</label>
+                <input type="number" step="0.1" value={meanPB} onChange={(e) => setMeanPB(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
               <div>
                 <label className="text-[11px] text-slate-400 block">WACC / Desconto (%)</label>
-                <input
-                  type="number"
-                  step="0.25"
-                  value={wacc}
-                  onChange={(e) => setWacc(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-                />
+                <input type="number" step="0.25" value={wacc} onChange={(e) => setWacc(parseFloat(e.target.value) || 0)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-white" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex border-b border-slate-800 space-x-8">
-          <button
-            onClick={() => setActiveTab('summary')}
-            className={`pb-4 text-sm font-semibold flex items-center space-x-2 border-b-2 transition-all ${
-              activeTab === 'summary'
-                ? 'border-cyan-500 text-cyan-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Activity className="w-4 h-4" />
-            <span>Visão Geral & Consenso</span>
+          <button onClick={() => setActiveTab('summary')} className={`pb-4 text-sm font-semibold flex items-center space-x-2 border-b-2 transition-all ${activeTab === 'summary' ? 'border-cyan-500 text-cyan-400' : 'border-transparent text-slate-400'}`}>
+            <Activity className="w-4 h-4" /> <span>Visão Geral & Consenso</span>
           </button>
-
-          <button
-            onClick={() => setActiveTab('comparison')}
-            className={`pb-4 text-sm font-semibold flex items-center space-x-2 border-b-2 transition-all ${
-              activeTab === 'comparison'
-                ? 'border-cyan-500 text-cyan-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>Matriz Comparativa dos 10 Modelos</span>
+          <button onClick={() => setActiveTab('comparison')} className={`pb-4 text-sm font-semibold flex items-center space-x-2 border-b-2 transition-all ${activeTab === 'comparison' ? 'border-cyan-500 text-cyan-400' : 'border-transparent text-slate-400'}`}>
+            <BarChart3 className="w-4 h-4" /> <span>Matriz Comparativa (10 Modelos)</span>
           </button>
-
-          <button
-            onClick={() => setActiveTab('models')}
-            className={`pb-4 text-sm font-semibold flex items-center space-x-2 border-b-2 transition-all ${
-              activeTab === 'models'
-                ? 'border-cyan-500 text-cyan-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Detalhamento Modelo a Modelo</span>
+          <button onClick={() => setActiveTab('models')} className={`pb-4 text-sm font-semibold flex items-center space-x-2 border-b-2 transition-all ${activeTab === 'models' ? 'border-cyan-500 text-cyan-400' : 'border-transparent text-slate-400'}`}>
+            <BookOpen className="w-4 h-4" /> <span>Detalhes por Modelo</span>
           </button>
         </div>
 
-        {/* TAB 1: SUMMARY & CONSENSUS DASHBOARD */}
         {activeTab === 'summary' && (
           <div className="space-y-8">
-            {/* Top Cards Consensus Summary */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-                <span className="text-xs text-slate-400 font-semibold block uppercase">Média dos 10 Modelos</span>
-                <div className="text-2xl font-bold text-cyan-400 mt-1">
-                  {currency}{overallStats.avgIntrinsic.toFixed(2)}
-                </div>
+                <span className="text-xs text-slate-400 font-semibold block uppercase">Média dos Modelos</span>
+                <div className="text-2xl font-bold text-cyan-400 mt-1">{currency}{overallStats.avgIntrinsic.toFixed(2)}</div>
                 <span className="text-[11px] text-slate-500">Valor Intrínseco Médio</span>
               </div>
-
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
                 <span className="text-xs text-slate-400 font-semibold block uppercase">Preço Alvo c/ Margem</span>
-                <div className="text-2xl font-bold text-emerald-400 mt-1">
-                  {currency}{overallStats.avgAcceptable.toFixed(2)}
-                </div>
-                <span className="text-[11px] text-slate-500">Com margem de {marginOfSafety}%</span>
+                <div className="text-2xl font-bold text-emerald-400 mt-1">{currency}{overallStats.avgAcceptable.toFixed(2)}</div>
+                <span className="text-[11px] text-slate-500">Margem de {marginOfSafety}%</span>
               </div>
-
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
                 <span className="text-xs text-slate-400 font-semibold block uppercase">Potencial Médio</span>
                 <div className={`text-2xl font-bold mt-1 ${overallStats.avgMarginVsMarket >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {overallStats.avgMarginVsMarket >= 0 ? '+' : ''}{overallStats.avgMarginVsMarket.toFixed(1)}%
                 </div>
-                <span className="text-[11px] text-slate-500">vs Preço Atual ({currency}{marketPrice.toFixed(2)})</span>
+                <span className="text-[11px] text-slate-500">vs Preço Atual</span>
               </div>
-
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-                <span className="text-xs text-slate-400 font-semibold block uppercase">Consenso dos 10 Modelos</span>
+                <span className="text-xs text-slate-400 font-semibold block uppercase">Consenso</span>
                 <div className="flex items-center space-x-2 mt-2">
-                  <span className="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 text-xs font-bold">
-                    {overallStats.undervaluedCount} Sub
-                  </span>
-                  <span className="px-2 py-1 rounded bg-amber-500/20 text-amber-400 text-xs font-bold">
-                    {overallStats.fairCount} Justo
-                  </span>
-                  <span className="px-2 py-1 rounded bg-rose-500/20 text-rose-400 text-xs font-bold">
-                    {overallStats.overvaluedCount} Sobre
-                  </span>
+                  <span className="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 text-xs font-bold">{overallStats.undervaluedCount} Sub</span>
+                  <span className="px-2 py-1 rounded bg-amber-500/20 text-amber-400 text-xs font-bold">{overallStats.fairCount} Justo</span>
+                  <span className="px-2 py-1 rounded bg-rose-500/20 text-rose-400 text-xs font-bold">{overallStats.overvaluedCount} Sobre</span>
                 </div>
               </div>
             </div>
 
-            {/* Visual Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Bar Chart comparing 10 models */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-cyan-400" /> Comparativo dos Valor Intrínseco por Modelo ({currency})
-                </h3>
+                <h3 className="text-sm font-bold text-white mb-4">Comparativo dos 10 Modelos ({currency})</h3>
                 <div className="h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartDataBar} margin={{ top: 10, right: 10, left: 0, bottom: 25 }}>
                       <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 10 }} interval={0} angle={-25} textAnchor="end" />
                       <YAxis stroke="#64748b" tickFormatter={(v) => `${currency}${v}`} tick={{ fontSize: 11 }} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem' }}
-                        formatter={(val) => [`${currency}${val}`, 'Valor']}
-                      />
+                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }} formatter={(val) => [`${currency}${val}`, 'Valor']} />
                       <Bar dataKey="ValorJusto" fill="#3b82f6" radius={[6, 6, 0, 0]} name="Valor Intrínseco" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              {/* Radar Chart Dispersion */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                  <PieChart className="w-4 h-4 text-purple-400" /> Dispersão de Valor Intrínseco vs Preço Mercado
-                </h3>
+                <h3 className="text-sm font-bold text-white mb-4">Dispersão vs Preço de Mercado</h3>
                 <div className="h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
@@ -1113,7 +918,7 @@ export default function App() {
                       <PolarAngleAxis dataKey="model" stroke="#94a3b8" tick={{ fontSize: 9 }} />
                       <PolarRadiusAxis angle={30} domain={[0, 'dataMax']} stroke="#64748b" />
                       <Radar name="Valor Intrínseco" dataKey="Valor" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.4} />
-                      <Radar name="Preço de Mercado" dataKey="Preco" stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} />
+                      <Radar name="Preço Mercado" dataKey="Preco" stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} />
                       <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }} />
                     </RadarChart>
                   </ResponsiveContainer>
@@ -1123,17 +928,9 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: FULL COMPARATIVE MATRIX */}
         {activeTab === 'comparison' && (
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <h3 className="text-base font-bold text-white">Matriz Comparativa dos 10 Modelos ({activeTicker})</h3>
-                <p className="text-xs text-slate-400">Visão consolidada do valor calculado, preço com margem e status</p>
-              </div>
-              <span className="text-xs text-slate-400">Preço Mercado ({activeTicker}): <strong className="text-cyan-400">{currency}{marketPrice.toFixed(2)}</strong></span>
-            </div>
-
+            <h3 className="text-base font-bold text-white">Matriz Comparativa Completa</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="bg-slate-950 text-slate-400 uppercase font-semibold">
@@ -1141,41 +938,25 @@ export default function App() {
                     <th className="px-4 py-3 rounded-l-lg">Modelo</th>
                     <th className="px-4 py-3">Categoria</th>
                     <th className="px-4 py-3 text-right">Valor Intrínseco</th>
-                    <th className="px-4 py-3 text-right">Preço c/ Margem ({marginOfSafety}%)</th>
+                    <th className="px-4 py-3 text-right">Preço c/ Margem</th>
                     <th className="px-4 py-3 text-right">Margem vs Mercado</th>
                     <th className="px-4 py-3 rounded-r-lg text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
                   {models.map((m) => (
-                    <tr key={m.key} className="hover:bg-slate-800/40 transition-colors">
+                    <tr key={m.key} className="hover:bg-slate-800/40">
                       <td className="px-4 py-3.5 font-bold text-slate-200">{m.name}</td>
                       <td className="px-4 py-3.5 text-slate-400">{m.category}</td>
-                      <td className="px-4 py-3.5 text-right font-bold text-cyan-400">
-                        {currency}{m.intrinsicValue.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3.5 text-right font-semibold text-emerald-400">
-                        {currency}{m.acceptablePrice.toFixed(2)}
-                      </td>
+                      <td className="px-4 py-3.5 text-right font-bold text-cyan-400">{currency}{m.intrinsicValue.toFixed(2)}</td>
+                      <td className="px-4 py-3.5 text-right font-semibold text-emerald-400">{currency}{m.acceptablePrice.toFixed(2)}</td>
                       <td className={`px-4 py-3.5 text-right font-bold ${m.marginVsMarket >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {m.marginVsMarket >= 0 ? '+' : ''}{m.marginVsMarket.toFixed(1)}%
                       </td>
                       <td className="px-4 py-3.5 text-center">
-                        {m.isUndervalued && (
-                          <span className="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold text-[11px] border border-emerald-500/30">
-                            Subavaliada
-                          </span>
-                        )}
-                        {m.isFair && (
-                          <span className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-400 font-bold text-[11px] border border-amber-500/30">
-                            Preço Justo
-                          </span>
-                        )}
-                        {m.isOvervalued && (
-                          <span className="px-2.5 py-1 rounded bg-rose-500/20 text-rose-400 font-bold text-[11px] border border-rose-500/30">
-                            Sobreavaliada
-                          </span>
-                        )}
+                        {m.isUndervalued && <span className="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold text-[11px]">Subavaliada</span>}
+                        {m.isFair && <span className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-400 font-bold text-[11px]">Justo</span>}
+                        {m.isOvervalued && <span className="px-2.5 py-1 rounded bg-rose-500/20 text-rose-400 font-bold text-[11px]">Sobreavaliada</span>}
                       </td>
                     </tr>
                   ))}
@@ -1185,22 +966,16 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: MODEL BY MODEL DETAILED VIEWS */}
         {activeTab === 'models' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Model Selector Sidebar */}
             <div className="lg:col-span-4 space-y-2">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2 px-1">
-                Selecione o Modelo
-              </span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2 px-1">Selecione o Modelo</span>
               {models.map((m) => (
                 <button
                   key={m.key}
                   onClick={() => setSelectedModelKey(m.key)}
                   className={`w-full text-left p-3 rounded-xl border text-xs font-semibold transition-all flex items-center justify-between ${
-                    selectedModelKey === m.key
-                      ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-md'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-850 hover:text-slate-200'
+                    selectedModelKey === m.key ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   <span className="truncate">{m.name}</span>
@@ -1209,7 +984,6 @@ export default function App() {
               ))}
             </div>
 
-            {/* Active Model Detailed View */}
             <div className="lg:col-span-8 space-y-6">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
                 <div className="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -1218,49 +992,17 @@ export default function App() {
                     <h2 className="text-xl font-bold text-white mt-0.5">{currentModelObj.name}</h2>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs text-slate-400 block">Valor Intrínseco ({activeTicker})</span>
+                    <span className="text-xs text-slate-400 block">Valor Intrínseco</span>
                     <span className="text-2xl font-bold text-cyan-400">{currency}{currentModelObj.intrinsicValue.toFixed(2)}</span>
                   </div>
                 </div>
 
-                {/* Description */}
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  {currentModelObj.description}
-                </p>
+                <p className="text-xs text-slate-300 leading-relaxed">{currentModelObj.description}</p>
 
-                {/* Formula Breakdown Card */}
                 <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
                   <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Fórmula Matemática</span>
-                  <div className="font-mono text-cyan-300 text-sm bg-slate-900 p-3 rounded-lg border border-slate-800">
-                    {currentModelObj.formula}
-                  </div>
-                  <div className="text-xs text-slate-400 pt-1">
-                    <strong>Parâmetros Utilizados:</strong> {currentModelObj.details}
-                  </div>
-                </div>
-
-                {/* Valuation Status comparison card */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                    <span className="text-xs text-slate-400">Preço Alvo c/ Margem ({marginOfSafety}%)</span>
-                    <div className="text-xl font-bold text-emerald-400 mt-1">
-                      {currency}{currentModelObj.acceptablePrice.toFixed(2)}
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                    <span className="text-xs text-slate-400">Preço Mercado</span>
-                    <div className="text-xl font-bold text-slate-200 mt-1">
-                      {currency}{marketPrice.toFixed(2)}
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                    <span className="text-xs text-slate-400">Margem vs Mercado</span>
-                    <div className={`text-xl font-bold mt-1 ${currentModelObj.marginVsMarket >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {currentModelObj.marginVsMarket >= 0 ? '+' : ''}{currentModelObj.marginVsMarket.toFixed(1)}%
-                    </div>
-                  </div>
+                  <div className="font-mono text-cyan-300 text-sm bg-slate-900 p-3 rounded-lg border border-slate-800">{currentModelObj.formula}</div>
+                  <div className="text-xs text-slate-400 pt-1"><strong>Parâmetros:</strong> {currentModelObj.details}</div>
                 </div>
               </div>
             </div>
